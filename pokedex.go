@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"strings"
 	"strconv"
+	"sort"
 )
 
 type Type struct {
@@ -84,27 +85,25 @@ type BaseData struct {
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/list url:", r.URL)
 
-	//var queryParams = r.URL.Query()
+	// If user wants to list pokemons due to their type.
 	var typeQuery = strings.ToLower(r.URL.Query().Get("type"))
+	var sortQuery = strings.ToLower(r.URL.Query().Get("sortby"))
+
 
 	if(len(typeQuery) > 0){
-
 		if(isTypeValid(typeQuery)){
 			fmt.Println(typeQuery+" type pokemons :" )
-			printPokemonInfo(typeQuery)
 		}else{
 			fmt.Println("There is no type called : " + typeQuery)
 		}
-
 	}
 
 	if(r.URL.Path == "/list/types"){
 		fmt.Println("Pokemon Types:")
-		for i := 0; i < len(baseData.Pokemons); i++ {
-			fmt.Println(baseData.Types[i].Name)
-		}
 	}
 
+
+	printPokemonInfo(typeQuery,sortQuery)
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +137,25 @@ func FloatToString(input_num float64) string {
 	return strconv.FormatFloat(input_num, 'f', 6, 64)
 }
 
-func printPokemonInfo(queryParam string) {
+func printPokemonInfo(queryParam string,sortBy string) {
+
+	if(len(sortBy) > 0){
+		fmt.Println("Sorted by: " + sortBy)
+		if(sortBy == "baseattack"){
+			sort.Slice(baseData.Pokemons[:], func(i, j int) bool {
+				return baseData.Pokemons[i].BaseAttack < baseData.Pokemons[j].BaseAttack
+			})
+		}else if(sortBy == "basedefense"){
+			sort.Slice(baseData.Pokemons[:], func(i, j int) bool {
+				return baseData.Pokemons[i].BaseDefense < baseData.Pokemons[j].BaseDefense
+			})
+		}else if(sortBy == "basestamina"){
+			sort.Slice(baseData.Pokemons[:], func(i, j int) bool {
+				return baseData.Pokemons[i].BaseStamina < baseData.Pokemons[j].BaseStamina
+			})
+		}
+
+	}
 
 	for i := 0; i < len(baseData.Pokemons); i++ {
 		if(strings.ToLower(baseData.Pokemons[i].TypeI[0]) == queryParam){
@@ -156,7 +173,7 @@ func printPokemonInfo(queryParam string) {
 			fmt.Println("\t Buddy Distance Needed: " + strconv.Itoa(baseData.Pokemons[i].BuddyDistanceNeeded))
 			fmt.Println("\t Candy Name: " + baseData.Pokemons[i].Candy.Name)
 			fmt.Println("\t CaptureRate: " + FloatToString(baseData.Pokemons[i].CaptureRate))
-			fmt.Println("\t Classification: " + baseData.Pokemons[i].Classification)
+			//fmt.Println("\t Classification: " + baseData.Pokemons[i].Classification)
 			fmt.Println("\t FastAttackS: ")
 			for j := 0; j < len(baseData.Pokemons[i].FastAttackS);j++{
 				fmt.Println("\t\t " + baseData.Pokemons[i].FastAttackS[j])
@@ -175,17 +192,13 @@ func printPokemonInfo(queryParam string) {
 				for l := 0; l < len(baseData.Pokemons[i].NextEvolutions);l++{
 					fmt.Println("\t\t Name: " + string(baseData.Pokemons[i].NextEvolutions[l].Name))
 				}
-
 			}
 			if(baseData.Pokemons[i].PreviousEvolutions != nil){
 				fmt.Println("\t Previous Evolutions: ")
 				for l := 0; l < len(baseData.Pokemons[i].PreviousEvolutions);l++{
 					fmt.Println("\t\t Name: " + string(baseData.Pokemons[i].PreviousEvolutions[l].Name))
 				}
-
 			}
-
-
 		}
 	}
 }
