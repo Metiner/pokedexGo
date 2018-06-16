@@ -12,68 +12,7 @@ import (
 	"sort"
 )
 
-type Type struct {
-	// Name of the type
-	Name string `json:"name"`
-	// The effective types, damage multiplize 2x
-	EffectiveAgainst []string `json:"effectiveAgainst"`
-	// The weak types that against, damage multiplize 0.5x
-	WeakAgainst []string `json:"weakAgainst"`
-}
-
-type Pokemon struct {
-	Number         string   `json:"Number"`
-	Name           string   `json:"Name"`
-	Classification string   `json:"Classification"`
-	TypeI          []string `json:"Type I"`
-	TypeII         []string `json:"Type II,omitempty"`
-	Weaknesses     []string `json:"Weaknesses"`
-	FastAttackS    []string `json:"Fast Attack(s)"`
-	Weight         string   `json:"Weight"`
-	Height         string   `json:"Height"`
-	Candy          struct {
-		Name     string `json:"Name"`
-		FamilyID int    `json:"FamilyID"`
-	} `json:"Candy"`
-	NextEvolutionRequirements struct {
-		Amount int    `json:"Amount"`
-		Family int    `json:"Family"`
-		Name   string `json:"Name"`
-	} `json:"Next Evolution Requirements,omitempty"`
-	NextEvolutions []struct {
-		Number string `json:"Number"`
-		Name   string `json:"Name"`
-	} `json:"Next evolution(s),omitempty"`
-	PreviousEvolutions []struct {
-		Number string `json:"Number"`
-		Name   string `json:"Name"`
-	} `json:"Previous evolution(s),omitempty"`
-	SpecialAttacks      []string `json:"Special Attack(s)"`
-	BaseAttack          int      `json:"BaseAttack"`
-	BaseDefense         int      `json:"BaseDefense"`
-	BaseStamina         int      `json:"BaseStamina"`
-	CaptureRate         float64  `json:"CaptureRate"`
-	FleeRate            float64  `json:"FleeRate"`
-	BuddyDistanceNeeded int      `json:"BuddyDistanceNeeded"`
-}
-
-// Move is an attack information. The
-type Move struct {
-	// The ID of the move
-	ID int `json:"id"`
-	// Name of the attack
-	Name string `json:"name"`
-	// Type of attack
-	Type string `json:"type"`
-	// The damage that enemy will take
-	Damage int `json:"damage"`
-	// Energy requirement of the attack
-	Energy int `json:"energy"`
-	// Dps is Damage Per Second
-	Dps float64 `json:"dps"`
-	// The duration
-	Duration int `json:"duration"`
-}
+var baseData BaseData
 
 // BaseData is a struct for reading data.json
 type BaseData struct {
@@ -129,33 +68,110 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		for i := 0; i < len(baseData.Moves); i++ {
 			fmt.Println("\t" + baseData.Moves[i].Name)
 		}
+	// List of endpoints that users can call.
+	}else if(r.URL.Path == "/help"){
+
+		fmt.Println("\t get/pokemon")
+		fmt.Println("\t get/type")
+		fmt.Println("\t get/move")
+		fmt.Println("You can call the endpoints that above with name or type filters.")
+		fmt.Println()
+
+		fmt.Println("\t list/pokemons")
+		fmt.Println("\t list/types")
+		fmt.Println("\t list/moves")
+		fmt.Println("You can call the endpoints that above and sort them with sortby parameter.")
+		fmt.Println()
+
+		fmt.Println("You can sort the pokemons by base attack, base stamina, base defense")
+		fmt.Println("You can sort the moves by damage, energy, dps, duration")
 	}
+
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
 
+	//First, get query param if exists.
+	var queryParam  = getQueryParam(r)[0]
+
+
+
 	//If user wants to get certain pokemon
 	if(r.URL.Path == "/get/pokemon"){
 
-		var pokemonName = strings.ToLower(r.URL.Query().Get("name"))
-		for i := 0; i < len(baseData.Pokemons); i++ {
-			if(strings.ToLower(baseData.Pokemons[i].Name) == pokemonName){
-				printPokemonInfo(baseData.Pokemons[i])
+		switch queryParam {
+		case "name":
+			if(isTypeValid(queryParam)) {
+				var pokemonName = strings.ToLower(r.URL.Query().Get("name"))
+				for i := 0; i < len(baseData.Moves); i++ {
+					if (strings.ToLower(baseData.Pokemons[i].Name) == pokemonName) {
+						printMoveInfo(baseData.Moves[i])
+					}
+				}
+			}else{
+				fmt.Println("Is that a valid name ?")
+
 			}
+			break
+		case "type":
+			if(isTypeValid(queryParam)) {
+				var pokemonType= strings.ToLower(r.URL.Query().Get("type"))
+				for i := 0; i < len(baseData.Moves); i++ {
+					if (strings.ToLower(baseData.Pokemons[i].TypeI[0]) == pokemonType) {
+						printMoveInfo(baseData.Moves[i])
+					}
+				}
+			}else{
+				fmt.Println("Is that a valid type ?")
+
+			}
+			break
+		default:
+			fmt.Println("Pokemon's what ???")
 		}
+
 	}
+
 	//If user wants to get certain move
 	if(r.URL.Path == "/get/move"){
 
-		var moveName = strings.ToLower(r.URL.Query().Get("name"))
-		for i := 0; i < len(baseData.Moves); i++ {
-			if(strings.ToLower(baseData.Moves[i].Name) == moveName){
-				printMoveInfo(baseData.Moves[i])
+
+		switch queryParam {
+		case "name":
+
+			if(isTypeValid(queryParam)) {
+				var moveName= strings.ToLower(r.URL.Query().Get("name"))
+				for i := 0; i < len(baseData.Moves); i++ {
+					if (strings.ToLower(baseData.Moves[i].Name) == moveName) {
+						printMoveInfo(baseData.Moves[i])
+					}
+				}
+			}else{
+				fmt.Println("Is that a valid name ?")
 			}
+			break
+		case "type":
+
+			if(isTypeValid(queryParam)) {
+				var moveType= strings.ToLower(r.URL.Query().Get("type"))
+				for i := 0; i < len(baseData.Moves); i++ {
+					if (strings.ToLower(baseData.Moves[i].Type) == moveType) {
+						printMoveInfo(baseData.Moves[i])
+					}
+				}
+			}else{
+				fmt.Println("Is that a valid type ?")
+
+			}
+			break
+		default:
+			fmt.Println("Move's what ???")
+
 		}
 	}
 	//If user wants to get certain type
 	if(r.URL.Path == "/get/type"){
+
 		var typeName = strings.ToLower(r.URL.Query().Get("name"))
 		if(isTypeValid(typeName)){
 			for i := 0; i < len(baseData.Types); i++ {
@@ -169,12 +185,19 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+
 func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Oops, there is no such a thing :(")
 }
 
+func getQueryParam(r *http.Request)[]string{
+	var keys []string
+	for key, _ := range r.URL.Query(){
+		keys = append(keys, key)
+	}
+	return keys
+}
 
-var baseData BaseData
 //the function to read json data.
 func jsonReader() BaseData {
 
@@ -195,6 +218,8 @@ func FloatToString(input_num float64) string {
 	return strconv.FormatFloat(input_num, 'f', 6, 64)
 }
 
+
+//to sort every wanted query if query includes sortby param.
 func sortBaseData(sortBy string){
 	sortBy = strings.ToLower(sortBy)
 
@@ -233,6 +258,9 @@ func sortBaseData(sortBy string){
 	}
 
 }
+
+
+
 func printPokemonInfo(pokemon Pokemon) {
 
 	fmt.Println(pokemon.Name+":" )
@@ -248,7 +276,6 @@ func printPokemonInfo(pokemon Pokemon) {
 	fmt.Println("\t Buddy Distance Needed: " + strconv.Itoa(pokemon.BuddyDistanceNeeded))
 	fmt.Println("\t Candy Name: " + pokemon.Candy.Name)
 	fmt.Println("\t CaptureRate: " + FloatToString(pokemon.CaptureRate))
-	//fmt.Println("\t Classification: " + baseData.Pokemons[i].Classification)
 	fmt.Println("\t FastAttackS: ")
 	for j := 0; j < len(pokemon.FastAttackS);j++{
 		fmt.Println("\t\t " + pokemon.FastAttackS[j])
@@ -275,6 +302,7 @@ func printPokemonInfo(pokemon Pokemon) {
 		}
 	}
 }
+
 func printMoveInfo(move Move) {
 
 	fmt.Println(move.Name+":" )
@@ -286,6 +314,7 @@ func printMoveInfo(move Move) {
 	fmt.Println("\t Energy: " + strconv.Itoa(move.Energy))
 
 }
+
 func printTypeInfo(typ Type) {
 
 	fmt.Println(typ.Name+":" )
@@ -298,9 +327,16 @@ func printTypeInfo(typ Type) {
 	for l := 0; l < len(typ.WeakAgainst);l++{
 		fmt.Println("\t\t: " + typ.WeakAgainst[l])
 	}
-
+	fmt.Println("\t Example Pokemons:")
+	for j := 0; j< len(baseData.Pokemons);j++ {
+		if(baseData.Pokemons[j].TypeI[0] == typ.Name && j<3){
+			fmt.Println("\t\t " + baseData.Pokemons[j].Name)
+		}
+	}
 
 }
+
+
 
 func isTypeValid(queryParam string) bool{
 	for i := 0; i<len(baseData.Types);i++{
@@ -313,7 +349,7 @@ func isTypeValid(queryParam string) bool{
 
 
 func main() {
-	//TODO: read data.json to a BaseData
+
 	baseData  = jsonReader()
 
 
@@ -322,14 +358,15 @@ func main() {
 	http.HandleFunc("/get/pokemon", getHandler)
 	http.HandleFunc("/get/move", getHandler)
 
-
 	//List handlers
 	http.HandleFunc("/list/types", listHandler)
 	http.HandleFunc("/list/pokemons", listHandler)
 	http.HandleFunc("/list/moves", listHandler)
+	http.HandleFunc("/help", listHandler)
 
 
-	//TODO: add more
+
+
 	http.HandleFunc("/", otherwise)
 	log.Println("starting server on :8080")
 	http.ListenAndServe(":8080", nil)
